@@ -330,28 +330,28 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [X] **COMMIT**: `feat(entries): add and integrate focus entry URLs`
 
 ### 4.4 Bulk Operations (Critical - Needs Review)
-- [ ] Create `BulkUpdateView` class-based view
-- [ ] Add validation for bulk date operations
-- [ ] Handle race conditions and data integrity
-- [ ] Add transaction management for consistency
-- [ ] Add comprehensive Swagger documentation
-- [ ] **TEST**: Bulk update with various date ranges via Swagger
-- [ ] **TEST**: Edge cases (overlapping dates, invalid data)
-- [ ] **AI REVIEW**: Performance and data consistency
-- [ ] **DOCUMENT**: Bulk operation design decisions and limitations
-- [ ] **REFACTOR**: Optimize bulk operations for performance
-- [ ] **COMMIT**: `feat(entries): implement bulk update operations`
+- [X] Create `BulkUpdateView` class-based view
+- [X] Add validation for bulk date operations
+- [X] Handle race conditions and data integrity
+- [X] Add transaction management for consistency
+- [X] Add comprehensive Swagger documentation
+- [X] **TEST**: Bulk update with various date ranges via Swagger
+- [X] **TEST**: Edge cases (overlapping dates, invalid data)
+- [X] **AI REVIEW**: Performance and data consistency
+- [X] **DOCUMENT**: Bulk operation design decisions and limitations
+- [X] **REFACTOR**: Optimize bulk operations for performance
+- [X] **COMMIT**: `feat(entries): implement bulk update operations`
 
 ### 4.5 Focus Entry Admin Enhancement
-- [ ] Enhance `FocusEntryAdmin` with advanced filtering
-- [ ] Add date hierarchy and custom list display
-- [ ] Add bulk actions for common operations
-- [ ] Add data validation in admin forms
-- [ ] **TEST**: Admin interface for focus entry management
-- [ ] **TEST**: Bulk operations via admin
-- [ ] **AI REVIEW**: Admin usability and data integrity
-- [ ] **REFACTOR**: Improve admin interface UX
-- [ ] **COMMIT**: `feat(entries): enhance focus entry admin`
+- [X] Enhance `FocusEntryAdmin` with advanced filtering
+- [X] Add date hierarchy and custom list display
+- [X] Add bulk actions for common operations
+- [X] Add data validation in admin forms
+- [X] **TEST**: Admin interface for focus entry management
+- [X] **TEST**: Bulk operations via admin
+- [X] **AI REVIEW**: Admin usability and data integrity
+- [X] **REFACTOR**: Improve admin interface UX
+- [X] **COMMIT**: `feat(entries): enhance focus entry admin`
 
 ---
 

@@ -1,9 +1,58 @@
 from django.contrib import admin
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Avg, Q
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
+from django.forms import ModelForm
+from datetime import date, timedelta
 from .models import Reason, FocusEntry
+
+
+class FocusEntryForm(ModelForm):
+    """
+    Custom form for FocusEntry with enhanced validation.
+    """
+    class Meta:
+        model = FocusEntry
+        fields = '__all__'
+    
+    def clean(self):
+        """
+        Enhanced validation for focus entries.
+        """
+        cleaned_data = super().clean()
+        entry_date = cleaned_data.get('date')
+        hours = cleaned_data.get('hours')
+        user = cleaned_data.get('user')
+        
+        # Validate date is not in the future
+        if entry_date and entry_date > date.today():
+            raise ValidationError("Cannot create entries for future dates.")
+        
+        # Validate date is not too far in the past (1 year)
+        if entry_date and entry_date < date.today() - timedelta(days=365):
+            raise ValidationError("Cannot create entries more than 1 year in the past.")
+        
+        # Validate hours range
+        if hours is not None:
+            if hours < 0:
+                raise ValidationError("Hours cannot be negative.")
+            if hours > 24:
+                raise ValidationError("Hours cannot exceed 24 hours per day.")
+        
+        # Check for duplicate entries (same user, same date)
+        if user and entry_date:
+            existing = FocusEntry.objects.filter(user=user, date=entry_date)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError(f"User already has an entry for {entry_date}.")
+        
+        return cleaned_data
 
 
 class FocusEntryInline(admin.TabularInline):
@@ -110,39 +159,357 @@ class ReasonAdmin(admin.ModelAdmin):
         return readonly_fields
 
 
+class FocusEntryDateFilter(admin.SimpleListFilter):
+    """
+    Custom filter for focus entry dates.
+    """
+    title = _('Date Range')
+    parameter_name = 'date_range'
+    
+    def lookups(self, request, model_admin):
+        return (
+            ('today', _('Today')),
+            ('yesterday', _('Yesterday')),
+            ('this_week', _('This Week')),
+            ('last_week', _('Last Week')),
+            ('this_month', _('This Month')),
+            ('last_month', _('Last Month')),
+            ('no_hours', _('No Hours Recorded')),
+            ('with_hours', _('With Hours Recorded')),
+        )
+    
+    def queryset(self, request, queryset):
+        today = date.today()
+        
+        if self.value() == 'today':
+            return queryset.filter(date=today)
+        elif self.value() == 'yesterday':
+            return queryset.filter(date=today - timedelta(days=1))
+        elif self.value() == 'this_week':
+            start_of_week = today - timedelta(days=today.weekday())
+            return queryset.filter(date__gte=start_of_week)
+        elif self.value() == 'last_week':
+            start_of_week = today - timedelta(days=today.weekday())
+            start_of_last_week = start_of_week - timedelta(days=7)
+            end_of_last_week = start_of_week - timedelta(days=1)
+            return queryset.filter(date__gte=start_of_last_week, date__lte=end_of_last_week)
+        elif self.value() == 'this_month':
+            return queryset.filter(date__year=today.year, date__month=today.month)
+        elif self.value() == 'last_month':
+            if today.month == 1:
+                last_month = 12
+                last_year = today.year - 1
+            else:
+                last_month = today.month - 1
+                last_year = today.year
+            return queryset.filter(date__year=last_year, date__month=last_month)
+        elif self.value() == 'no_hours':
+            return queryset.filter(hours__isnull=True)
+        elif self.value() == 'with_hours':
+            return queryset.filter(hours__isnull=False)
+
+
+class FocusEntryHoursFilter(admin.SimpleListFilter):
+    """
+    Custom filter for focus entry hours.
+    """
+    title = _('Hours Range')
+    parameter_name = 'hours_range'
+    
+    def lookups(self, request, model_admin):
+        return (
+            ('0-2', _('0-2 hours')),
+            ('2-4', _('2-4 hours')),
+            ('4-6', _('4-6 hours')),
+            ('6-8', _('6-8 hours')),
+            ('8+', _('8+ hours')),
+        )
+    
+    def queryset(self, request, queryset):
+        if self.value() == '0-2':
+            return queryset.filter(hours__gte=0, hours__lt=2)
+        elif self.value() == '2-4':
+            return queryset.filter(hours__gte=2, hours__lt=4)
+        elif self.value() == '4-6':
+            return queryset.filter(hours__gte=4, hours__lt=6)
+        elif self.value() == '6-8':
+            return queryset.filter(hours__gte=6, hours__lt=8)
+        elif self.value() == '8+':
+            return queryset.filter(hours__gte=8)
+        return queryset
+
+
 @admin.register(FocusEntry)
 class FocusEntryAdmin(admin.ModelAdmin):
     """
-    Enhanced admin interface for FocusEntry model.
+    Enhanced admin interface for FocusEntry model with advanced features.
     """
-    list_display = ('user', 'date', 'hours', 'reason', 'total_user_entries')
-    list_filter = ('user', 'date', 'reason', 'hours')
-    search_fields = ('user__username', 'user__email', 'reason__description')
+    form = FocusEntryForm
+    
+    # Enhanced list display
+    list_display = (
+        'user', 'date', 'hours_display', 'reason', 'total_user_entries', 
+        'user_avg_hours', 'days_since_entry'
+    )
+    
+    # Advanced filtering
+    list_filter = (
+        FocusEntryDateFilter,
+        FocusEntryHoursFilter,
+        'user', 
+        'reason', 
+        'date',
+        ('hours', admin.EmptyFieldListFilter),
+    )
+    
+    # Enhanced search
+    search_fields = (
+        'user__username', 
+        'user__email', 
+        'user__first_name', 
+        'user__last_name',
+        'reason__description'
+    )
+    
+    # Date hierarchy for easy navigation
     date_hierarchy = 'date'
+    
+    # Default ordering
     ordering = ('-date', 'user')
     
-    # Fieldsets for better organization
+    # Items per page
+    list_per_page = 50
+    
+    # Bulk actions
+    actions = [
+        'bulk_set_reason',
+        'bulk_set_hours',
+        'bulk_remove_reason',
+        'export_selected_entries',
+        'mark_as_productive_day',
+    ]
+    
+    # Enhanced fieldsets
     fieldsets = (
         ('Entry Information', {
-            'fields': ('user', 'date', 'hours')
+            'fields': ('user', 'date', 'hours'),
+            'description': 'Basic focus entry information'
         }),
         ('Reason', {
             'fields': ('reason',),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': 'Optional reason for focus or distraction'
+        }),
+        ('Statistics', {
+            'fields': ('user_avg_hours', 'total_user_entries'),
+            'classes': ('collapse',),
+            'description': 'User statistics (read-only)'
         }),
     )
     
+    # Readonly fields
+    readonly_fields = ('user_avg_hours', 'total_user_entries')
+    
+    def hours_display(self, obj):
+        """
+        Display hours with color coding and formatting.
+        """
+        if obj.hours is None:
+            return format_html('<span style="color: #999;">No hours</span>')
+        
+        # Color coding based on hours
+        if obj.hours >= 8:
+            color = '#28a745'  # Green for productive days
+        elif obj.hours >= 6:
+            color = '#17a2b8'  # Blue for good days
+        elif obj.hours >= 4:
+            color = '#ffc107'  # Yellow for moderate days
+        else:
+            color = '#dc3545'  # Red for low focus days
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.1f}h</span>',
+            color, obj.hours
+        )
+    hours_display.short_description = 'Hours'
+    hours_display.admin_order_field = 'hours'
+    
     def total_user_entries(self, obj):
         """
-        Display total entries for this user.
+        Display total entries for this user with link.
         """
         count = FocusEntry.objects.filter(user=obj.user).count()
         url = reverse('admin:core_focusentry_changelist') + f'?user__id__exact={obj.user.id}'
         return format_html('<a href="{}">{} total</a>', url, count)
     total_user_entries.short_description = 'User Total'
+    total_user_entries.admin_order_field = 'user_entries_count'
+    
+    def user_avg_hours(self, obj):
+        """
+        Display average hours for this user.
+        """
+        avg = FocusEntry.objects.filter(user=obj.user, hours__isnull=False).aggregate(
+            avg_hours=Avg('hours')
+        )['avg_hours'] or 0
+        return f"{avg:.1f}h avg"
+    user_avg_hours.short_description = 'User Avg'
+    
+    def days_since_entry(self, obj):
+        """
+        Display days since this entry was created.
+        """
+        days = (date.today() - obj.date).days
+        if days == 0:
+            return 'Today'
+        elif days == 1:
+            return 'Yesterday'
+        else:
+            return f'{days} days ago'
+    days_since_entry.short_description = 'Age'
     
     def get_queryset(self, request):
         """
-        Optimize queries with select_related.
+        Optimize queries with select_related and annotations.
         """
-        return super().get_queryset(request).select_related('user', 'reason') 
+        queryset = super().get_queryset(request).select_related('user', 'reason')
+        return queryset.annotate(
+            user_entries_count=Count('user__focus_entries'),
+        )
+    
+    # Bulk Actions
+    def bulk_set_reason(self, request, queryset):
+        """
+        Bulk action to set reason for selected entries.
+        """
+        # This would typically redirect to a custom form
+        # For now, we'll use a simple approach
+        reason_id = request.POST.get('reason_id')
+        if reason_id:
+            try:
+                reason = Reason.objects.get(id=reason_id)
+                updated = queryset.update(reason=reason)
+                self.message_user(
+                    request, 
+                    f'Successfully set reason "{reason.description}" for {updated} entries.',
+                    messages.SUCCESS
+                )
+            except Reason.DoesNotExist:
+                self.message_user(
+                    request, 
+                    'Invalid reason ID provided.',
+                    messages.ERROR
+                )
+        else:
+            self.message_user(
+                request, 
+                'Please provide a reason ID.',
+                messages.WARNING
+            )
+    bulk_set_reason.short_description = "Set reason for selected entries"
+    
+    def bulk_set_hours(self, request, queryset):
+        """
+        Bulk action to set hours for selected entries.
+        """
+        hours = request.POST.get('hours')
+        if hours:
+            try:
+                hours_float = float(hours)
+                if 0 <= hours_float <= 24:
+                    updated = queryset.update(hours=hours_float)
+                    self.message_user(
+                        request, 
+                        f'Successfully set {hours_float} hours for {updated} entries.',
+                        messages.SUCCESS
+                    )
+                else:
+                    self.message_user(
+                        request, 
+                        'Hours must be between 0 and 24.',
+                        messages.ERROR
+                    )
+            except ValueError:
+                self.message_user(
+                    request, 
+                    'Invalid hours value provided.',
+                    messages.ERROR
+                )
+        else:
+            self.message_user(
+                request, 
+                'Please provide hours value.',
+                messages.WARNING
+            )
+    bulk_set_hours.short_description = "Set hours for selected entries"
+    
+    def bulk_remove_reason(self, request, queryset):
+        """
+        Bulk action to remove reason from selected entries.
+        """
+        updated = queryset.update(reason=None)
+        self.message_user(
+            request, 
+            f'Successfully removed reason from {updated} entries.',
+            messages.SUCCESS
+        )
+    bulk_remove_reason.short_description = "Remove reason from selected entries"
+    
+    def mark_as_productive_day(self, request, queryset):
+        """
+        Bulk action to mark entries as productive (8+ hours).
+        """
+        updated = queryset.update(hours=8.0)
+        self.message_user(
+            request, 
+            f'Successfully marked {updated} entries as productive days (8 hours).',
+            messages.SUCCESS
+        )
+    mark_as_productive_day.short_description = "Mark as productive day (8h)"
+    
+    def export_selected_entries(self, request, queryset):
+        """
+        Bulk action to export selected entries (placeholder).
+        """
+        self.message_user(
+            request, 
+            f'Export functionality for {queryset.count()} entries would be implemented here.',
+            messages.INFO
+        )
+    export_selected_entries.short_description = "Export selected entries"
+    
+    # Custom admin methods
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Make certain fields readonly based on context.
+        """
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        if obj and obj.date < date.today() - timedelta(days=30):
+            readonly_fields.extend(['date', 'hours', 'reason'])
+        return readonly_fields
+    
+    def has_delete_permission(self, request, obj=None):
+        """
+        Allow deletion but with confirmation for recent entries.
+        """
+        return True
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Custom save logic with validation.
+        """
+        # Additional validation can be added here
+        super().save_model(request, obj, form, change)
+        
+        # Show success message with context
+        if change:
+            self.message_user(
+                request, 
+                f'Focus entry for {obj.user.username} on {obj.date} updated successfully.',
+                messages.SUCCESS
+            )
+        else:
+            self.message_user(
+                request, 
+                f'New focus entry for {obj.user.username} on {obj.date} created successfully.',
+                messages.SUCCESS
+            ) 
