@@ -38,6 +38,7 @@ urlpatterns = [
     
     # API endpoints
     path('api/auth/', include('authentication.urls')),
+    path('api/', include('core.urls')),
     
     # API Documentation
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

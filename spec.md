@@ -269,26 +269,26 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 ## Phase 3: Reasons Management
 
 ### 3.1 Reason Serializers & Views
-- [ ] Create `ReasonSerializer` for CRUD operations
-- [ ] Create `ReasonViewSet` with full CRUD operations
-- [ ] Add proper permissions (user can only access own reasons)
-- [ ] Add validation to prevent deletion of reasons in use
-- [ ] Add Swagger documentation
-- [ ] **TEST**: Full CRUD operations via Swagger UI
-- [ ] **TEST**: Deletion constraints (reason used in entries)
-- [ ] **AI REVIEW**: Simple CRUD implementation and constraints
-- [ ] **REFACTOR**: Consistent with entry patterns
-- [ ] **COMMIT**: `feat(reasons): implement reason serializers and views`
+- [X] Create `ReasonSerializer` for CRUD operations
+- [X] Create `ReasonViewSet` with full CRUD operations
+- [X] Add proper permissions (user can only access own reasons)
+- [X] Add validation to prevent deletion of reasons in use
+- [X] Add Swagger documentation
+- [X] **TEST**: Full CRUD operations via Swagger UI
+- [X] **TEST**: Deletion constraints (reason used in entries)
+- [X] **AI REVIEW**: Simple CRUD implementation and constraints
+- [X] **REFACTOR**: Consistent with entry patterns
+- [X] **COMMIT**: `feat(reasons): implement reason serializers and views`
 
 ### 3.2 Reason Admin & Integration
-- [ ] Enhance `ReasonAdmin` with user filtering
-- [ ] Add reason usage statistics in admin
-- [ ] Test reason integration with focus entries
-- [ ] **TEST**: Reason management workflow via admin
-- [ ] **TEST**: Reason-FocusEntry relationships
-- [ ] **AI REVIEW**: Admin integration patterns
-- [ ] **REFACTOR**: Optimize reason queries
-- [ ] **COMMIT**: `feat(reasons): enhance reason admin and integration`
+- [X] Enhance `ReasonAdmin` with user filtering
+- [X] Add reason usage statistics in admin
+- [X] Test reason integration with focus entries
+- [X] **TEST**: Reason management workflow via admin
+- [X] **TEST**: Reason-FocusEntry relationships
+- [X] **AI REVIEW**: Admin integration patterns
+- [X] **REFACTOR**: Optimize reason queries
+- [X] **COMMIT**: `feat(reasons): enhance reason admin and integration`
 
 ---
 
