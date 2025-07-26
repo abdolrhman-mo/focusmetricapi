@@ -158,6 +158,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - ✅ **Request code review** - Get AI feedback on critical implementations
 - ✅ **Document decisions** - Record why you chose specific approaches
 - ✅ **Refactor constantly** - Clean code before adding new features
+- ✅ **Commit** - Commit code after each section
 
 ---
 
@@ -251,6 +252,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Data cleanup on account deletion via admin
 - [ ] **AI REVIEW**: Token invalidation and data cleanup logic
 - [ ] **REFACTOR**: Consistent error handling across auth views
+- [ ] **COMMIT**: `feat(auth): implement auth support views (logout, stats, delete)`
 
 ### 2.5 Authentication URLs & Integration
 - [ ] Create `authentication/urls.py` with proper URL patterns
@@ -260,6 +262,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Complete authentication flow via admin and Swagger
 - [ ] **AI REVIEW**: URL structure and naming conventions
 - [ ] **REFACTOR**: Organize URL patterns logically
+- [ ] **COMMIT**: `feat(auth): add and integrate authentication URLs`
 
 ---
 
@@ -275,6 +278,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Deletion constraints (reason used in entries)
 - [ ] **AI REVIEW**: Simple CRUD implementation and constraints
 - [ ] **REFACTOR**: Consistent with entry patterns
+- [ ] **COMMIT**: `feat(reasons): implement reason serializers and views`
 
 ### 3.2 Reason Admin & Integration
 - [ ] Enhance `ReasonAdmin` with user filtering
@@ -284,6 +288,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Reason-FocusEntry relationships
 - [ ] **AI REVIEW**: Admin integration patterns
 - [ ] **REFACTOR**: Optimize reason queries
+- [ ] **COMMIT**: `feat(reasons): enhance reason admin and integration`
 
 ---
 
@@ -300,6 +305,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **AI REVIEW**: Serializer relationships and validation logic
 - [ ] **DOCUMENT**: Business rules and validation decisions
 - [ ] **REFACTOR**: Optimize serializer performance
+- [ ] **COMMIT**: `feat(entries): implement focus entry serializers`
 
 ### 4.2 Focus Entry ViewSets (Critical - Needs Review)
 - [ ] Create `FocusEntryViewSet` with full CRUD operations
@@ -311,6 +317,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Filtering and pagination via Swagger UI
 - [ ] **AI REVIEW**: ViewSet implementation and query optimization
 - [ ] **REFACTOR**: Extract common patterns and optimize database hits
+- [ ] **COMMIT**: `feat(entries): implement focus entry viewsets`
 
 ### 4.3 Bulk Operations (Critical - Needs Review)
 - [ ] Create `BulkUpdateView` class-based view
@@ -323,6 +330,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **AI REVIEW**: Performance and data consistency
 - [ ] **DOCUMENT**: Bulk operation design decisions and limitations
 - [ ] **REFACTOR**: Optimize bulk operations for performance
+- [ ] **COMMIT**: `feat(entries): implement bulk update operations`
 
 ### 4.4 Focus Entry Admin Enhancement
 - [ ] Enhance `FocusEntryAdmin` with advanced filtering
@@ -333,6 +341,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Bulk operations via admin
 - [ ] **AI REVIEW**: Admin usability and data integrity
 - [ ] **REFACTOR**: Improve admin interface UX
+- [ ] **COMMIT**: `feat(entries): enhance focus entry admin`
 
 ---
 
@@ -350,6 +359,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **AI REVIEW**: Calculation logic and performance
 - [ ] **DOCUMENT**: Statistics algorithm decisions and formulas
 - [ ] **REFACTOR**: Optimize database queries and caching
+- [ ] **COMMIT**: `feat(stats): implement user statistics API`
 
 ### 5.2 Data Export & Reporting
 - [ ] Create `DataExportView` for CSV/JSON export
@@ -359,6 +369,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Data export functionality via admin and API
 - [ ] **AI REVIEW**: Export performance and security
 - [ ] **REFACTOR**: Optimize export queries
+- [ ] **COMMIT**: `feat(data): implement data export and reporting`
 
 ---
 
@@ -374,6 +385,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Rate limiting behavior
 - [ ] **AI REVIEW**: Security and robustness
 - [ ] **REFACTOR**: Consistent error handling patterns
+- [ ] **COMMIT**: `fix(api): implement global error handling and validation`
 
 ### 6.2 Performance Optimization
 - [ ] Add database indexes for frequently queried fields
@@ -384,6 +396,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Database query efficiency via Django debug toolbar
 - [ ] **AI REVIEW**: Scalability considerations
 - [ ] **REFACTOR**: Remove N+1 queries and performance bottlenecks
+- [ ] **COMMIT**: `perf(api): optimize database queries and performance`
 
 ### 6.3 API Documentation & Testing
 - [ ] Enhance Swagger documentation with detailed examples
@@ -394,6 +407,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: API documentation accuracy
 - [ ] **AI REVIEW**: Documentation completeness and clarity
 - [ ] **REFACTOR**: Improve API documentation organization
+- [ ] **COMMIT**: `docs(api): enhance and finalize API documentation`
 
 ### 6.4 Admin Interface Polish
 - [ ] Add custom admin dashboard with statistics
@@ -403,6 +417,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Complete admin workflow for app management
 - [ ] **AI REVIEW**: Admin interface usability
 - [ ] **REFACTOR**: Optimize admin performance
+- [ ] **COMMIT**: `feat(admin): polish and enhance admin interface`
 
 ### 6.5 Security & Production Setup
 - [ ] Add API authentication security headers
@@ -413,6 +428,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **TEST**: Security headers and CORS configuration
 - [ ] **AI REVIEW**: Production security configuration
 - [ ] **DOCUMENT**: Production deployment requirements
+- [ ] **COMMIT**: `chore(deploy): configure security and production settings`
 
 ---
 
