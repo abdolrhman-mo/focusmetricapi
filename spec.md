@@ -243,16 +243,16 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [X] **REFACTOR**: Consistent response formatting
 
 ### 2.4 Auth Support Views
-- [ ] Create `LogoutView` class-based view
-- [ ] Create `UserStatsView` class-based view (focus statistics)
-- [ ] Create `DeleteAccountView` class-based view
-- [ ] Add proper permissions and cascade deletion logic
-- [ ] Add comprehensive Swagger documentation
-- [ ] **TEST**: Each endpoint individually via Swagger
-- [ ] **TEST**: Data cleanup on account deletion via admin
-- [ ] **AI REVIEW**: Token invalidation and data cleanup logic
-- [ ] **REFACTOR**: Consistent error handling across auth views
-- [ ] **COMMIT**: `feat(auth): implement auth support views (logout, stats, delete)`
+- [X] Create `LogoutView` class-based view
+- [X] Create `UserStatsView` class-based view (focus statistics)
+- [X] Create `DeleteAccountView` class-based view
+- [X] Add proper permissions and cascade deletion logic
+- [X] Add comprehensive Swagger documentation
+- [X] **TEST**: Each endpoint individually via Swagger
+- [X] **TEST**: Data cleanup on account deletion via admin
+- [X] **AI REVIEW**: Token invalidation and data cleanup logic
+- [X] **REFACTOR**: Consistent error handling across auth views
+- [X] **COMMIT**: `feat(auth): implement auth support views (logout, stats, delete)`
 
 ### 2.5 Authentication URLs & Integration
 - [ ] Create `authentication/urls.py` with proper URL patterns
