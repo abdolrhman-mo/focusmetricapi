@@ -11,10 +11,17 @@ from .views import (
 app_name = 'authentication'
 
 urlpatterns = [
+    # OAuth Authentication
     path('google/', GoogleOAuthView.as_view(), name='google_oauth'),
-    path('profile/', UserProfileView.as_view(), name='user_profile'),
-    path('profile/update/', UserProfileUpdateView.as_view(), name='user_profile_update'),
+    
+    # Session Management
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('stats/', UserStatsView.as_view(), name='user_stats'),
-    path('profile/delete/', DeleteAccountView.as_view(), name='delete_account'),
+    
+    # User Profile Management
+    path('profile/', UserProfileView.as_view(), name='profile_get'),
+    path('profile/update/', UserProfileUpdateView.as_view(), name='profile_update'),
+    path('profile/delete/', DeleteAccountView.as_view(), name='profile_delete'),
+    
+    # User Statistics
+    path('stats/', UserStatsView.as_view(), name='stats'),
 ] 
