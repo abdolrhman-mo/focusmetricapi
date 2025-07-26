@@ -295,17 +295,17 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 ## Phase 4: Core Features - Focus Entries
 
 ### 4.1 Focus Entry Serializers
-- [ ] Create `FocusEntrySerializer` for CRUD operations
-- [ ] Create `FocusEntryListSerializer` for optimized list views
-- [ ] Create `BulkUpdateSerializer` for bulk operations
-- [ ] Add nested reason serialization
-- [ ] Add validation for date uniqueness per user
-- [ ] Add validation for hours (positive numbers, reasonable limits)
-- [ ] **TEST**: Serializer validation with various inputs via Django shell
-- [ ] **AI REVIEW**: Serializer relationships and validation logic
-- [ ] **DOCUMENT**: Business rules and validation decisions
-- [ ] **REFACTOR**: Optimize serializer performance
-- [ ] **COMMIT**: `feat(entries): implement focus entry serializers`
+- [X] Create `FocusEntrySerializer` for CRUD operations
+- [X] Create `FocusEntryListSerializer` for optimized list views
+- [X] Create `BulkUpdateSerializer` for bulk operations
+- [X] Add nested reason serialization
+- [X] Add validation for date uniqueness per user
+- [X] Add validation for hours (positive numbers, reasonable limits)
+- [X] **TEST**: Serializer validation with various inputs via Django shell
+- [X] **AI REVIEW**: Serializer relationships and validation logic
+- [X] **DOCUMENT**: Business rules and validation decisions
+- [X] **REFACTOR**: Optimize serializer performance
+- [X] **COMMIT**: `feat(entries): implement focus entry serializers`
 
 ### 4.2 Focus Entry ViewSets (Critical - Needs Review)
 - [ ] Create `FocusEntryViewSet` with full CRUD operations
@@ -319,7 +319,17 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **REFACTOR**: Extract common patterns and optimize database hits
 - [ ] **COMMIT**: `feat(entries): implement focus entry viewsets`
 
-### 4.3 Bulk Operations (Critical - Needs Review)
+### 4.3 Focus Entry URLs & Integration
+- [ ] Add focus entry ViewSet to core router
+- [ ] Add bulk update endpoint to core URLs
+- [ ] Test all focus entry endpoints via Swagger UI
+- [ ] Verify admin integration works with focus entries
+- [ ] **TEST**: Complete focus entry workflow via admin and Swagger
+- [ ] **AI REVIEW**: URL structure and naming conventions
+- [ ] **REFACTOR**: Organize URL patterns logically
+- [ ] **COMMIT**: `feat(entries): add and integrate focus entry URLs`
+
+### 4.4 Bulk Operations (Critical - Needs Review)
 - [ ] Create `BulkUpdateView` class-based view
 - [ ] Add validation for bulk date operations
 - [ ] Handle race conditions and data integrity
@@ -332,7 +342,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - [ ] **REFACTOR**: Optimize bulk operations for performance
 - [ ] **COMMIT**: `feat(entries): implement bulk update operations`
 
-### 4.4 Focus Entry Admin Enhancement
+### 4.5 Focus Entry Admin Enhancement
 - [ ] Enhance `FocusEntryAdmin` with advanced filtering
 - [ ] Add date hierarchy and custom list display
 - [ ] Add bulk actions for common operations
