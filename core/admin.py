@@ -117,7 +117,9 @@ class ReasonAdmin(admin.ModelAdmin):
         Display total hours from focus entries using this reason.
         """
         total = obj.focus_entries.aggregate(total=Sum('hours'))['total'] or 0
-        return f"{total:.1f} hours"
+        total_value = float(total)
+        return f"{total_value:.1f} hours"
+        
     total_hours.short_description = 'Total Hours'
     total_hours.admin_order_field = 'focus_entries__hours__sum'
     
@@ -316,20 +318,40 @@ class FocusEntryAdmin(admin.ModelAdmin):
         """
         if obj.hours is None:
             return format_html('<span style="color: #999;">No hours</span>')
+
+        # Convert to float safely
+        try:
+            # Handle both regular floats and SafeString objects
+            if hasattr(obj.hours, '__html__'):
+                # It's a SafeString, convert to string first
+                hours_str = str(obj.hours)
+                # Try to extract numeric value
+                import re
+                match = re.search(r'(\d+\.?\d*)', hours_str)
+                if match:
+                    hours_value = float(match.group(1))
+                else:
+                    hours_value = float(hours_str)
+            else:
+                hours_value = float(obj.hours)
+        except (ValueError, TypeError):
+            return format_html('<span style="color: #999;">Invalid hours</span>')
         
         # Color coding based on hours
-        if obj.hours >= 8:
+        if hours_value >= 8:
             color = '#28a745'  # Green for productive days
-        elif obj.hours >= 6:
+        elif hours_value >= 6:
             color = '#17a2b8'  # Blue for good days
-        elif obj.hours >= 4:
+        elif hours_value >= 4:
             color = '#ffc107'  # Yellow for moderate days
         else:
             color = '#dc3545'  # Red for low focus days
         
+        # Format the hours value as string first, then use in format_html
+        formatted_hours = f"{hours_value:.1f}h"
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{:.1f}h</span>',
-            color, obj.hours
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, formatted_hours
         )
     hours_display.short_description = 'Hours'
     hours_display.admin_order_field = 'hours'
@@ -351,7 +373,14 @@ class FocusEntryAdmin(admin.ModelAdmin):
         avg = FocusEntry.objects.filter(user=obj.user, hours__isnull=False).aggregate(
             avg_hours=Avg('hours')
         )['avg_hours'] or 0
-        return f"{avg:.1f}h avg"
+        
+        # Ensure we have a proper float value
+        try:
+            avg_value = float(str(avg))
+        except (ValueError, TypeError):
+            avg_value = 0.0
+            
+        return f"{avg_value:.1f}h avg"
     user_avg_hours.short_description = 'User Avg'
     
     def days_since_entry(self, obj):

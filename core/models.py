@@ -22,4 +22,4 @@ class FocusEntry(models.Model):
         unique_together = ('user', 'date')
 
     def __str__(self):
-        return f"{self.user.username} - {self.date}" 
+        return f"{str(self.user.username)} - {str(self.date)}" 
