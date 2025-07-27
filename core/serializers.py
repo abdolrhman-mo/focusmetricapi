@@ -84,13 +84,15 @@ class FocusEntrySerializer(serializers.ModelSerializer):
     """
     Serializer for FocusEntry model.
     Handles CRUD operations for focus tracking entries.
+    Supports both reason_id (existing reason) and reason_text (new reason) in single request.
     """
     reason = ReasonSerializer(read_only=True)
     reason_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    reason_text = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=500)
     
     class Meta:
         model = FocusEntry
-        fields = ['id', 'date', 'hours', 'reason', 'reason_id']
+        fields = ['id', 'date', 'hours', 'reason', 'reason_id', 'reason_text']
         read_only_fields = ['id']
     
     def validate_date(self, value):
@@ -114,7 +116,7 @@ class FocusEntrySerializer(serializers.ModelSerializer):
         Validate that hours is a positive number within reasonable limits.
         """
         if value is not None:
-            if value <= 0:
+            if value < 0:
                 raise serializers.ValidationError("Hours must be a positive number.")
             
             if value > 24:
@@ -139,12 +141,46 @@ class FocusEntrySerializer(serializers.ModelSerializer):
         
         return value
     
+    def validate_reason_text(self, value):
+        """
+        Validate reason text if provided.
+        """
+        if value is not None and value.strip():
+            if len(value.strip()) < 3:
+                raise serializers.ValidationError("Reason text must be at least 3 characters long.")
+            if len(value.strip()) > 500:
+                raise serializers.ValidationError("Reason text cannot exceed 500 characters.")
+        
+        return value.strip() if value else value
+    
+    def validate_reason_text(self, value):
+        """
+        Validate reason text if provided.
+        """
+        if value is not None and value.strip():
+            if len(value.strip()) < 3:
+                raise serializers.ValidationError("Reason text must be at least 3 characters long.")
+            if len(value.strip()) > 500:
+                raise serializers.ValidationError("Reason text cannot exceed 500 characters.")
+        
+        return value.strip() if value else value
+    
     def validate(self, data):
         """
         Validate that the user doesn't already have an entry for this date.
+        Also validate that reason_id and reason_text are not both provided.
         """
         user = self.context['request'].user
         entry_date = data.get('date')
+        reason_id = data.get('reason_id')
+        reason_text = data.get('reason_text')
+        
+        # Validate reason handling - only one should be provided
+        if reason_id is not None and reason_text:
+            raise serializers.ValidationError(
+                "Cannot provide both reason_id and reason_text. "
+                "Use reason_id for existing reasons or reason_text for new reasons."
+            )
         
         # Check for existing entry on the same date
         existing_entry = FocusEntry.objects.filter(user=user, date=entry_date)
@@ -164,35 +200,67 @@ class FocusEntrySerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create a new focus entry associated with the current user.
+        Supports both reason_id (existing reason) and reason_text (new reason) in atomic transaction.
         """
+        from django.db import transaction
+        
         user = self.context['request'].user
         reason_id = validated_data.pop('reason_id', None)
+        reason_text = validated_data.pop('reason_text', None)
         
-        # Set the reason if provided
-        if reason_id:
-            validated_data['reason'] = Reason.objects.get(id=reason_id)
+        with transaction.atomic():
+            # Handle reason creation or retrieval
+            if reason_text:
+                # Create new reason or get existing one with same text
+                reason, created = Reason.objects.get_or_create(
+                    user=user,
+                    description=reason_text,
+                    defaults={'description': reason_text}
+                )
+                validated_data['reason'] = reason
+            elif reason_id:
+                # Use existing reason
+                validated_data['reason'] = Reason.objects.get(id=reason_id)
         
         return FocusEntry.objects.create(user=user, **validated_data)
     
     def update(self, instance, validated_data):
         """
         Update an existing focus entry.
+        Supports both reason_id (existing reason) and reason_text (new reason) in atomic transaction.
         """
+        from django.db import transaction
+        
+        user = self.context['request'].user
         reason_id = validated_data.pop('reason_id', None)
+        reason_text = validated_data.pop('reason_text', None)
         
-        # Update the reason if provided
-        if reason_id is not None:
-            if reason_id:
-                instance.reason = Reason.objects.get(id=reason_id)
-            else:
-                instance.reason = None
-        
-        # Update other fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        
-        instance.save()
-        return instance
+        with transaction.atomic():
+            # Handle reason updates
+            if reason_text is not None:
+                if reason_text:
+                    # Create new reason or get existing one with same text
+                    reason, created = Reason.objects.get_or_create(
+                        user=user,
+                        description=reason_text,
+                        defaults={'description': reason_text}
+                    )
+                    instance.reason = reason
+                else:
+                    # Remove reason
+                    instance.reason = None
+            elif reason_id is not None:
+                if reason_id:
+                    instance.reason = Reason.objects.get(id=reason_id)
+                else:
+                    instance.reason = None
+            
+            # Update other fields
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            
+            instance.save()
+            return instance
 
 
 class FocusEntryListSerializer(serializers.ModelSerializer):
@@ -212,6 +280,7 @@ class FocusEntryListSerializer(serializers.ModelSerializer):
 class BulkUpdateSerializer(serializers.Serializer):
     """
     Serializer for bulk updating focus entries.
+    Supports both reason_id (existing reason) and reason_text (new reason) in atomic transaction.
     """
     dates = serializers.ListField(
         child=serializers.DateField(),
@@ -220,6 +289,7 @@ class BulkUpdateSerializer(serializers.Serializer):
         help_text="List of dates to update (max 31 dates)"
     )
     reason_id = serializers.UUIDField(required=False, allow_null=True)
+    reason_text = serializers.CharField(required=False, allow_blank=True, max_length=500)
     hours = serializers.FloatField(required=False, min_value=0, max_value=24)
     
     def validate_dates(self, value):
@@ -261,7 +331,7 @@ class BulkUpdateSerializer(serializers.Serializer):
         Validate hours if provided.
         """
         if value is not None:
-            if value <= 0:
+            if value < 0:
                 raise serializers.ValidationError("Hours must be a positive number.")
             
             if value > 24:
@@ -274,10 +344,23 @@ class BulkUpdateSerializer(serializers.Serializer):
     def validate(self, data):
         """
         Validate that at least one field to update is provided.
+        Also validate that reason_id and reason_text are not both provided.
         """
-        if 'reason_id' not in data and 'hours' not in data:
+        reason_id = data.get('reason_id')
+        reason_text = data.get('reason_text')
+        hours = data.get('hours')
+        
+        # Validate reason handling - only one should be provided
+        if reason_id is not None and reason_text:
             raise serializers.ValidationError(
-                "At least one field (reason_id or hours) must be provided for bulk update."
+                "Cannot provide both reason_id and reason_text. "
+                "Use reason_id for existing reasons or reason_text for new reasons."
+            )
+        
+        # Validate that at least one field to update is provided
+        if reason_id is None and reason_text is None and hours is None:
+            raise serializers.ValidationError(
+                "At least one field (reason_id, reason_text, or hours) must be provided for bulk update."
             )
         
         return data 

@@ -30,7 +30,7 @@ class BulkUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     @swagger_auto_schema(
-        operation_description="Bulk update focus entries for multiple dates",
+        operation_description="Bulk update focus entries for multiple dates. Supports both reason_id (existing reason) and reason_text (new reason) in single atomic transaction.",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['dates'],
@@ -42,7 +42,11 @@ class BulkUpdateView(APIView):
                 ),
                 'reason_id': openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
-                    description="Reason ID to set (optional, null to remove)"
+                    description="Reason ID to set (optional, use for existing reasons)"
+                ),
+                'reason_text': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Reason text to create or find (optional, use for new reasons)"
                 ),
                 'hours': openapi.Schema(
                     type=openapi.TYPE_NUMBER, format=openapi.FORMAT_FLOAT,
@@ -89,11 +93,19 @@ class BulkUpdateView(APIView):
         
         dates = serializer.validated_data['dates']
         reason_id = serializer.validated_data.get('reason_id')
+        reason_text = serializer.validated_data.get('reason_text')
         hours = serializer.validated_data.get('hours')
         
         # Get reason object if provided
         reason = None
-        if reason_id:
+        if reason_text:
+            # Create new reason or get existing one with same text
+            reason, created = Reason.objects.get_or_create(
+                user=request.user,
+                description=reason_text,
+                defaults={'description': reason_text}
+            )
+        elif reason_id:
             try:
                 reason = Reason.objects.get(id=reason_id, user=request.user)
             except Reason.DoesNotExist:
@@ -125,7 +137,7 @@ class BulkUpdateView(APIView):
                         # Update existing entry
                         if hours is not None:
                             entry.hours = hours
-                        if reason_id is not None:
+                        if reason_id is not None or reason_text is not None:
                             entry.reason = reason
                         entry.save()
                         updated_count += 1
@@ -266,7 +278,7 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
     
     @swagger_auto_schema(
-        operation_description="Create a new focus entry",
+        operation_description="Create a new focus entry. Supports both reason_id (existing reason) and reason_text (new reason) in single atomic transaction.",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['date'],
@@ -281,7 +293,11 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
                 ),
                 'reason_id': openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
-                    description="Reason ID (optional)"
+                    description="Reason ID (optional, use for existing reasons)"
+                ),
+                'reason_text': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Reason text (optional, use for new reasons)"
                 ),
             }
         ),
@@ -331,7 +347,7 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
     
     @swagger_auto_schema(
-        operation_description="Update a focus entry (full update)",
+        operation_description="Update a focus entry (full update). Supports both reason_id (existing reason) and reason_text (new reason) in single atomic transaction.",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -345,7 +361,11 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
                 ),
                 'reason_id': openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
-                    description="Reason ID (optional, null to remove)"
+                    description="Reason ID (optional, use for existing reasons)"
+                ),
+                'reason_text': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Reason text (optional, use for new reasons)"
                 ),
             }
         ),
@@ -363,7 +383,7 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
     
     @swagger_auto_schema(
-        operation_description="Partially update a focus entry",
+        operation_description="Partially update a focus entry. Supports both reason_id (existing reason) and reason_text (new reason) in single atomic transaction.",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -377,7 +397,11 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
                 ),
                 'reason_id': openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
-                    description="Reason ID (optional, null to remove)"
+                    description="Reason ID (optional, use for existing reasons)"
+                ),
+                'reason_text': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Reason text (optional, use for new reasons)"
                 ),
             }
         ),
