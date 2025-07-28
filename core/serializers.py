@@ -20,10 +20,6 @@ class ReasonSerializer(serializers.ModelSerializer):
         """
         if not value or not value.strip():
             raise serializers.ValidationError("Description cannot be empty.")
-        
-        # Check for reasonable length
-        if len(value.strip()) > 500:
-            raise serializers.ValidationError("Description cannot exceed 500 characters.")
             
         return value.strip()
     
@@ -88,7 +84,7 @@ class FocusEntrySerializer(serializers.ModelSerializer):
     """
     reason = ReasonSerializer(read_only=True)
     reason_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
-    reason_text = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=500)
+    reason_text = serializers.CharField(write_only=True, required=False, allow_blank=True)
     
     class Meta:
         model = FocusEntry
@@ -97,18 +93,8 @@ class FocusEntrySerializer(serializers.ModelSerializer):
     
     def validate_date(self, value):
         """
-        Validate that the date is not in the future and not too far in the past.
+        Validate date field.
         """
-        today = date.today()
-        
-        if value > today:
-            raise serializers.ValidationError("Cannot create entries for future dates.")
-        
-        # Allow entries up to 1 year in the past
-        one_year_ago = today - timedelta(days=365)
-        if value < one_year_ago:
-            raise serializers.ValidationError("Cannot create entries more than 1 year in the past.")
-        
         return value
     
     def validate_hours(self, value):
@@ -148,20 +134,6 @@ class FocusEntrySerializer(serializers.ModelSerializer):
         if value is not None and value.strip():
             if len(value.strip()) < 3:
                 raise serializers.ValidationError("Reason text must be at least 3 characters long.")
-            if len(value.strip()) > 500:
-                raise serializers.ValidationError("Reason text cannot exceed 500 characters.")
-        
-        return value.strip() if value else value
-    
-    def validate_reason_text(self, value):
-        """
-        Validate reason text if provided.
-        """
-        if value is not None and value.strip():
-            if len(value.strip()) < 3:
-                raise serializers.ValidationError("Reason text must be at least 3 characters long.")
-            if len(value.strip()) > 500:
-                raise serializers.ValidationError("Reason text cannot exceed 500 characters.")
         
         return value.strip() if value else value
     
@@ -289,23 +261,13 @@ class BulkUpdateSerializer(serializers.Serializer):
         help_text="List of dates to update (max 31 dates)"
     )
     reason_id = serializers.UUIDField(required=False, allow_null=True)
-    reason_text = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    reason_text = serializers.CharField(required=False, allow_blank=True)
     hours = serializers.FloatField(required=False, min_value=0, max_value=24)
     
     def validate_dates(self, value):
         """
-        Validate that dates are not in the future and not too far in the past.
+        Validate dates field.
         """
-        today = date.today()
-        one_year_ago = today - timedelta(days=365)
-        
-        for entry_date in value:
-            if entry_date > today:
-                raise serializers.ValidationError(f"Cannot update entries for future date: {entry_date}")
-            
-            if entry_date < one_year_ago:
-                raise serializers.ValidationError(f"Cannot update entries for date too far in past: {entry_date}")
-        
         # Check for duplicate dates
         if len(value) != len(set(value)):
             raise serializers.ValidationError("Duplicate dates are not allowed.")
