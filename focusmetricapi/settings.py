@@ -134,11 +134,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # 1. Django looks here for YOUR files
-]
+    os.path.join(BASE_DIR, 'static'),  # 1. Django looks here for YOUR files
+] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # 2. Everything gets collected here
 STATIC_URL = '/static/' # 3. URLs will start with this prefix
+
+# Make sure these are included
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -163,7 +169,13 @@ REST_FRAMEWORK = {
 }
 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "https://focus-metric.vercel.app",
+]
+
+# And ensure credentials are allowed:
+CORS_ALLOW_CREDENTIALS = True
 
 # Swagger Documentation
 SWAGGER_SETTINGS = {

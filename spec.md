@@ -57,77 +57,285 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 -   **`POST /google/`**
     -   **Description:** Authenticates user with Google OAuth token and returns DRF token.
     -   **Request Body:** `{ "token": "google-oauth-id-token-string" }`
-    -   **Response:** `200 OK` with `{ "token": "drf-token-key", "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe", "is_new_user": true } }`.
-    -   **Error Response:** `400 Bad Request` with `{ "error": "Invalid Google token" }`.
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "token": "drf-token-key-example",
+        "user": {
+            "id": 1,
+            "email": "user@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "name": "John Doe",
+            "date_joined": "2024-01-15T10:30:00Z"
+        },
+        "is_new_user": true
+    }
+    ```
+    -   **Error Response:** `400 Bad Request`
+    ```json
+    {
+        "error": "Invalid Google token"
+    }
+    ```
 
 -   **`GET /profile/`**
     -   **Description:** Retrieves current authenticated user's profile information.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` with `{ "id": "uuid", "email": "user@example.com", "name": "John Doe", "date_joined": "2024-01-15T10:30:00Z" }`.
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "id": 1,
+        "email": "user@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
+        "name": "John Doe",
+        "date_joined": "2024-01-15T10:30:00Z"
+    }
+    ```
 
 -   **`PUT /profile/`**
     -   **Description:** Updates current user's profile information.
     -   **Headers:** `Authorization: Token <token>`
     -   **Request Body:** `{ "first_name": "John", "last_name": "Smith" }`
-    -   **Response:** `200 OK` with updated user profile data.
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "id": 1,
+        "email": "user@example.com",
+        "first_name": "John",
+        "last_name": "Smith",
+        "name": "John Smith",
+        "date_joined": "2024-01-15T10:30:00Z"
+    }
+    ```
 
 -   **`POST /logout/`**
     -   **Description:** Deletes the user's auth token from the server (invalidates token).
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` with `{ "message": "Successfully logged out" }`.
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "message": "Successfully logged out"
+    }
+    ```
 
 -   **`GET /stats/`**
     -   **Description:** Retrieves user's focus tracking statistics.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` with `{ "total_focus_entries": 45, "total_focus_hours": 180.5, "current_streak": 7, "longest_streak": 12, "average_daily_hours": 4.2, "most_used_reason": {...}, "account_created": "...", "days_since_signup": 30 }`.
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "total_focus_entries": 45,
+        "total_focus_hours": 180.5,
+        "current_streak": 7,
+        "longest_streak": 12,
+        "average_daily_hours": 4.2,
+        "most_used_reason": {
+            "id": "uuid-string",
+            "description": "Work focus",
+            "usage_count": 25
+        },
+        "account_created": "2024-01-15T10:30:00Z",
+        "days_since_signup": 30
+    }
+    ```
 
 -   **`DELETE /profile/`**
     -   **Description:** Deletes current user's account and all associated data.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `204 No Content`.
+    -   **Response:** `204 No Content`
 
 ### Focus Entries (`/api/entries/`)
 
 -   **`GET /`**
     -   **Description:** Lists all focus entries for the authenticated user. Supports filtering by date range.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Query Params:** `?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
-    -   **Response:** `200 OK` with a list of focus entry objects.
+    -   **Query Params:** `?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&reason=uuid&min_hours=2&max_hours=8&ordering=-date&page=1`
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "count": 45,
+        "next": "http://localhost:8000/api/entries/?page=2",
+        "previous": null,
+        "results": [
+            {
+                "id": "uuid-string",
+                "date": "2024-01-15",
+                "hours": 6.5,
+                "reason_id": "uuid-string",
+                "reason_description": "Work focus"
+            }
+        ]
+    }
+    ```
 
 -   **`POST /`**
-    -   **Description:** Creates a single new focus entry.
+    -   **Description:** Creates a single new focus entry. Supports both `reason_id` (existing reason) and `reason_text` (new reason) in single request.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Request Body:** `{ "date": "YYYY-MM-DD", "hours": 2.5, "reason_id": "uuid..." }`
-    -   **Response:** `201 Created` with the new focus entry object.
+    -   **Request Body:** 
+    ```json
+    {
+        "date": "2024-01-15",
+        "hours": 6.5,
+        "reason_id": "uuid-string"
+    }
+    ```
+    OR
+    ```json
+    {
+        "date": "2024-01-15",
+        "hours": 6.5,
+        "reason_text": "New reason created in single request"
+    }
+    ```
+    -   **Response:** `201 Created`
+    ```json
+    {
+        "id": "uuid-string",
+        "date": "2024-01-15",
+        "hours": 6.5,
+        "reason": {
+            "id": "uuid-string",
+            "description": "Work focus",
+            "created_at": "2024-01-15T10:30:00Z"
+        }
+    }
+    ```
 
--   **`PUT /bulk-update/`**
-    -   **Description:** Updates multiple focus entries at once. Primarily used for the multi-day selection feature.
+-   **`POST /bulk-update/`**
+    -   **Description:** Updates multiple focus entries at once. Supports both `reason_id` and `reason_text`.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Request Body:** `{ "dates": ["YYYY-MM-DD", "YYYY-MM-DD"], "reason_id": "uuid..." }`
-    -   **Response:** `200 OK` with a list of the updated focus entry objects.
+    -   **Request Body:** 
+    ```json
+    {
+        "dates": ["2024-01-15", "2024-01-16"],
+        "reason_text": "Bulk update reason",
+        "hours": 8.0
+    }
+    ```
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "message": "Successfully processed 2 dates",
+        "updated_count": 1,
+        "created_count": 1,
+        "entries": [
+            {
+                "id": "uuid-string",
+                "date": "2024-01-15",
+                "hours": 8.0,
+                "reason_id": "uuid-string"
+            }
+        ]
+    }
+    ```
 
--   **`GET, PUT, PATCH, DELETE /<uuid:id>/`**
-    -   **Description:** Standard Retrieve, Update, and Delete operations for a single focus entry.
+-   **`GET /<uuid:id>/`**
+    -   **Description:** Retrieve a specific focus entry.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` (for GET/PUT/PATCH), `204 No Content` (for DELETE).
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "id": "uuid-string",
+        "date": "2024-01-15",
+        "hours": 6.5,
+        "reason": {
+            "id": "uuid-string",
+            "description": "Work focus",
+            "created_at": "2024-01-15T10:30:00Z"
+        }
+    }
+    ```
+
+-   **`PUT /<uuid:id>/`**
+    -   **Description:** Update a focus entry (full update). Supports both `reason_id` and `reason_text`.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** Same as POST
+    -   **Response:** `200 OK` (same as POST response)
+
+-   **`PATCH /<uuid:id>/`**
+    -   **Description:** Partially update a focus entry. Supports both `reason_id` and `reason_text`.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** Partial data (same fields as POST)
+    -   **Response:** `200 OK` (same as POST response)
+
+-   **`DELETE /<uuid:id>/`**
+    -   **Description:** Delete a focus entry.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Response:** `204 No Content`
 
 ### Reasons (`/api/reasons/`)
 
 -   **`GET /`**
     -   **Description:** Lists all reasons created by the authenticated user.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` with a list of reason objects.
+    -   **Response:** `200 OK`
+    ```json
+    [
+        {
+            "id": "uuid-string",
+            "description": "Work focus",
+            "created_at": "2024-01-15T10:30:00Z",
+            "usage_count": 25
+        }
+    ]
+    ```
 
 -   **`POST /`**
     -   **Description:** Creates a new reason.
     -   **Headers:** `Authorization: Token <token>`
     -   **Request Body:** `{ "description": "A new reason" }`
-    -   **Response:** `201 Created` with the new reason object.
+    -   **Response:** `201 Created`
+    ```json
+    {
+        "id": "uuid-string",
+        "description": "A new reason",
+        "created_at": "2024-01-15T10:30:00Z"
+    }
+    ```
 
--   **`GET, PUT, PATCH, DELETE /<uuid:id>/`**
-    -   **Description:** Standard Retrieve, Update, and Delete operations for a single reason.
+-   **`GET /<uuid:id>/`**
+    -   **Description:** Retrieve a specific reason with detailed information.
     -   **Headers:** `Authorization: Token <token>`
-    -   **Response:** `200 OK` (for GET/PUT/PATCH), `204 No Content` (for DELETE).
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "id": "uuid-string",
+        "description": "Work focus",
+        "created_at": "2024-01-15T10:30:00Z",
+        "usage_count": 25,
+        "recent_entries": [
+            {
+                "date": "2024-01-15",
+                "hours": 6.5
+            }
+        ]
+    }
+    ```
+
+-   **`PUT /<uuid:id>/`**
+    -   **Description:** Update a reason (full update).
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** `{ "description": "Updated reason description" }`
+    -   **Response:** `200 OK` (same as POST response)
+
+-   **`PATCH /<uuid:id>/`**
+    -   **Description:** Partially update a reason.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** `{ "description": "Updated reason description" }`
+    -   **Response:** `200 OK` (same as POST response)
+
+-   **`DELETE /<uuid:id>/`**
+    -   **Description:** Delete a reason. Cannot delete if reason is used in focus entries.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Response:** `204 No Content` (success) OR `400 Bad Request`
+    ```json
+    {
+        "error": "Cannot delete reason 'Work focus' because it is used in 25 focus entries. Please remove it from all entries first.",
+        "usage_count": 25
+    }
+    ```
 
 ### Common HTTP Status Codes
 
@@ -140,6 +348,39 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 - **404**: Not Found
 - **500**: Internal Server Error
 
+### Common Error Responses
+
+#### Validation Errors (400 Bad Request)
+```json
+{
+    "date": ["Cannot create entries for future dates."],
+    "hours": ["Hours must be a positive number."],
+    "reason_id": ["You can only use reasons that you created."],
+    "reason_text": ["Cannot provide both reason_id and reason_text."]
+}
+```
+
+#### Authentication Errors (401 Unauthorized)
+```json
+{
+    "detail": "Authentication credentials were not provided."
+}
+```
+
+#### Not Found Errors (404 Not Found)
+```json
+{
+    "detail": "Not found."
+}
+```
+
+#### Server Errors (500 Internal Server Error)
+```json
+{
+    "error": "Unexpected error during Google OAuth: [error details]"
+}
+```
+
 ### Authentication Flow
 
 1. **Frontend** receives Google OAuth token from Google Sign-In
@@ -148,6 +389,49 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
 4. **Backend** returns DRF token
 5. **Frontend** stores DRF token and uses it for all subsequent API calls
 6. **Frontend** includes `Authorization: Token <drf-token>` header in all protected requests
+
+### Single-Request API Design
+
+The API supports creating and updating focus entries with either existing reasons (`reason_id`) or new reasons (`reason_text`) in a single atomic request. This eliminates the need for multiple HTTP requests and ensures data consistency.
+
+#### Key Features:
+- **Atomic Operations**: All database operations are wrapped in transactions
+- **Automatic Reason Management**: Uses `get_or_create()` for reason handling
+- **Deduplication**: Same reason text creates the same reason object
+- **Backward Compatibility**: Existing `reason_id` approach still works
+- **Validation**: Prevents conflicts and ensures data integrity
+
+#### Usage Examples:
+
+**Create with existing reason:**
+```json
+POST /api/entries/
+{
+    "date": "2024-01-15",
+    "hours": 6.5,
+    "reason_id": "uuid-string"
+}
+```
+
+**Create with new reason:**
+```json
+POST /api/entries/
+{
+    "date": "2024-01-15",
+    "hours": 6.5,
+    "reason_text": "New reason created in single request"
+}
+```
+
+**Bulk update with reason text:**
+```json
+POST /api/entries/bulk-update/
+{
+    "dates": ["2024-01-15", "2024-01-16"],
+    "reason_text": "Bulk update reason",
+    "hours": 8.0
+}
+```
 
 # Backend Development Checklist Plan
 

@@ -77,3 +77,26 @@ POST /api/entries/bulk-update/
 - ✅ **Automatic Deduplication** - Same reason text creates same reason
 - ✅ **Backward Compatible** - Existing `reason_id` still works
 - ✅ **Enhanced UX** - Faster, more reliable API calls
+
+
+### Problem 3:
+
+CORS Issue
+
+The frontend browser was not making requests to the back cus of
+CORS_ALLOW_ALL_ORIGINS = True
+The browser thinks that its dangerous and especially that we're sending credentials (tokens and so on) with the request
+
+### Solution ✅ IMPLEMENTED
+
+# Remove this if you have it:
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# Replace it with this
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    # Add other allowed origins
+]
+
+# And ensure credentials are allowed:
+CORS_ALLOW_CREDENTIALS = True
