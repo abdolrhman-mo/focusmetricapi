@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Reason, FocusEntry
 from datetime import date, timedelta
+from uuid import UUID
 
 
 class ReasonSerializer(serializers.ModelSerializer):
@@ -325,4 +326,32 @@ class BulkUpdateSerializer(serializers.Serializer):
                 "At least one field (reason_id, reason_text, or hours) must be provided for bulk update."
             )
         
+        return data 
+
+
+class BulkDeleteSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=False,
+        allow_empty=True,
+        max_length=50,
+        help_text="List of FocusEntry IDs to delete (max 50)"
+    )
+    dates = serializers.ListField(
+        child=serializers.DateField(),
+        required=False,
+        allow_empty=True,
+        max_length=31,
+        help_text="List of dates to delete all entries for the user (max 31)"
+    )
+
+    def validate(self, data):
+        ids = data.get('ids', [])
+        dates = data.get('dates', [])
+        if not ids and not dates:
+            raise serializers.ValidationError("You must provide at least one of 'ids' or 'dates'.")
+        if len(ids) > 50:
+            raise serializers.ValidationError("Maximum 50 IDs allowed per request.")
+        if len(dates) > 31:
+            raise serializers.ValidationError("Maximum 31 dates allowed per request.")
         return data 

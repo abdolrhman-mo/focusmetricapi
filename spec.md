@@ -711,18 +711,18 @@ POST /api/entries/bulk-update/
 - [X] **COMMIT**: `feat(entries): enhance focus entry admin`
 
 ### 4.6 Bulk Delete Focus Entries
-- [ ] Add `BulkDeleteSerializer` to validate input (`ids`, `dates`).
-- [ ] Create `BulkDeleteView` (APIView) in `core/views.py`.
-- [ ] Implement atomic deletion logic for IDs and/or dates.
-- [ ] Add endpoint to `core/urls.py` as `/entries/bulk-delete/`.
-- [ ] Add Swagger documentation with request/response examples.
-- [ ] Add tests for:
+- [X] Add `BulkDeleteSerializer` to validate input (`ids`, `dates`).
+- [X] Create `BulkDeleteView` (APIView) in `core/views.py`.
+- [X] Implement atomic deletion logic for IDs and/or dates.
+- [X] Add endpoint to `core/urls.py` as `/entries/bulk-delete/`.
+- [X] Add Swagger documentation with request/response examples.
+- [X] Add tests for:
     - Deleting by IDs
     - Deleting by dates
     - Mixed/invalid input
     - Permission checks
     - Edge cases (not found, empty input)
-- [ ] **COMMIT:** `feat(entries): add bulk delete endpoint for focus entries`
+- [X] **COMMIT:** `feat(entries): add bulk delete endpoint for focus entries`
 
 ---
 

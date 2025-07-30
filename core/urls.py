@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ReasonViewSet, FocusEntryViewSet, BulkUpdateView
+from .views import ReasonViewSet, FocusEntryViewSet, BulkUpdateView, BulkDeleteView
 
 app_name = 'core'
 
@@ -12,7 +12,7 @@ router.register(r'entries', FocusEntryViewSet, basename='entry')
 urlpatterns = [
     # Custom endpoints (must come before router to avoid conflicts)
     path('entries/bulk-update/', BulkUpdateView.as_view(), name='bulk_update'),
-    
+    path('entries/bulk-delete/', BulkDeleteView.as_view(), name='bulk_delete'),
     # Router endpoints
     path('', include(router.urls)),
 ] 

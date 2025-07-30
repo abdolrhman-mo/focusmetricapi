@@ -16,7 +16,8 @@ from .serializers import (
     ReasonDetailSerializer,
     FocusEntrySerializer,
     FocusEntryListSerializer,
-    BulkUpdateSerializer
+    BulkUpdateSerializer,
+    BulkDeleteSerializer,  # <-- add import
 )
 
 
@@ -162,6 +163,83 @@ class BulkUpdateView(APIView):
                 {'error': f'Bulk update failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class BulkDeleteView(APIView):
+    """
+    View for bulk deleting focus entries by IDs and/or dates.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Bulk delete focus entries by IDs and/or dates. Only entries belonging to the authenticated user will be deleted.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'ids': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID),
+                    description="List of FocusEntry IDs to delete (max 50)"
+                ),
+                'dates': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                    description="List of dates to delete all entries for the user (max 31)"
+                ),
+            },
+            required=[],
+        ),
+        responses={
+            200: openapi.Response(
+                description="Bulk delete completed successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'deleted_count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'deleted_ids': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID)),
+                        'not_found': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                    }
+                )
+            ),
+            400: openapi.Response(description="Invalid request data"),
+            401: openapi.Response(description="Authentication required"),
+        }
+    )
+    def post(self, request):
+        serializer = BulkDeleteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        ids = serializer.validated_data.get('ids', [])
+        dates = serializer.validated_data.get('dates', [])
+        user = request.user
+        deleted_ids = []
+        not_found = []
+        try:
+            with transaction.atomic():
+                # Delete by IDs
+                if ids:
+                    entries_by_id = list(FocusEntry.objects.filter(user=user, id__in=ids))
+                    found_ids = {str(e.id) for e in entries_by_id}
+                    deleted_ids.extend(found_ids)
+                    not_found.extend([str(i) for i in ids if str(i) not in found_ids])
+                    FocusEntry.objects.filter(user=user, id__in=found_ids).delete()
+                # Delete by dates
+                if dates:
+                    entries_by_date = list(FocusEntry.objects.filter(user=user, date__in=dates))
+                    found_dates = {str(e.date) for e in entries_by_date}
+                    # Only add IDs not already deleted
+                    for e in entries_by_date:
+                        if str(e.id) not in deleted_ids:
+                            deleted_ids.append(str(e.id))
+                    not_found.extend([str(d) for d in dates if str(d) not in found_dates])
+                    FocusEntry.objects.filter(user=user, date__in=dates).delete()
+            return Response({
+                'deleted_count': len(deleted_ids),
+                'deleted_ids': deleted_ids,
+                'not_found': not_found
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f'Bulk delete failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FocusEntryFilter(filters.FilterSet):
