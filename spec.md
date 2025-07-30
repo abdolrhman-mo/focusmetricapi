@@ -265,6 +265,79 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
     -   **Headers:** `Authorization: Token <token>`
     -   **Response:** `204 No Content`
 
+### Bulk Delete Focus Entries (`/api/entries/bulk-delete/`)
+
+#### **Purpose**
+Allow users to delete multiple focus entries in a single atomic request, by specifying either a list of entry IDs or a list of dates.
+
+#### **Endpoint**
+- **URL:** `/api/entries/bulk-delete/`
+- **Method:** `POST`
+- **Auth:** `Authorization: Token <token>` (required)
+
+#### **Request Body**
+- **Delete by IDs:**
+    ```json
+    {
+      "ids": ["uuid-1", "uuid-2", "uuid-3"]
+    }
+    ```
+- **Delete by Dates:**
+    ```json
+    {
+      "dates": ["2024-07-01", "2024-07-02"]
+    }
+    ```
+- **Delete by Both (optional, union):**
+    ```json
+    {
+      "ids": ["uuid-1", "uuid-2"],
+      "dates": ["2024-07-01"]
+    }
+    ```
+
+#### **Request Fields**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| ids   | array of UUID | No | List of FocusEntry IDs to delete |
+| dates | array of date (YYYY-MM-DD) | No | List of dates to delete all entries for the user |
+- At least one of `ids` or `dates` must be provided.
+- If both are provided, delete the union of all specified entries.
+
+#### **Response**
+- **Success:** `200 OK`
+    ```json
+    {
+      "deleted_count": 3,
+      "deleted_ids": ["uuid-1", "uuid-2", "uuid-3"]
+    }
+    ```
+- **Partial Success:** (if some IDs/dates not found)
+    ```json
+    {
+      "deleted_count": 2,
+      "deleted_ids": ["uuid-1", "uuid-2"],
+      "not_found": ["uuid-3", "2024-07-01"]
+    }
+    ```
+- **Error:** `400 Bad Request`
+    ```json
+    {
+      "error": "You must provide at least one of 'ids' or 'dates'."
+    }
+    ```
+
+#### **Validation & Behavior**
+- Only entries belonging to the authenticated user are deleted.
+- If an ID or date does not match any entry, it is ignored or reported in `not_found`.
+- The operation is atomic: either all specified entries are deleted, or none if an error occurs.
+- Maximum allowed: 50 IDs and/or 31 dates per request (to prevent abuse).
+
+#### **Error Responses**
+- `400 Bad Request` if neither `ids` nor `dates` is provided, or if both are empty.
+- `401 Unauthorized` if not authenticated.
+- `500 Internal Server Error` for unexpected failures.
+
 ### Reasons (`/api/reasons/`)
 
 -   **`GET /`**
@@ -636,6 +709,20 @@ POST /api/entries/bulk-update/
 - [X] **AI REVIEW**: Admin usability and data integrity
 - [X] **REFACTOR**: Improve admin interface UX
 - [X] **COMMIT**: `feat(entries): enhance focus entry admin`
+
+### 4.6 Bulk Delete Focus Entries
+- [ ] Add `BulkDeleteSerializer` to validate input (`ids`, `dates`).
+- [ ] Create `BulkDeleteView` (APIView) in `core/views.py`.
+- [ ] Implement atomic deletion logic for IDs and/or dates.
+- [ ] Add endpoint to `core/urls.py` as `/entries/bulk-delete/`.
+- [ ] Add Swagger documentation with request/response examples.
+- [ ] Add tests for:
+    - Deleting by IDs
+    - Deleting by dates
+    - Mixed/invalid input
+    - Permission checks
+    - Edge cases (not found, empty input)
+- [ ] **COMMIT:** `feat(entries): add bulk delete endpoint for focus entries`
 
 ---
 
