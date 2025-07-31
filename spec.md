@@ -80,7 +80,7 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
     ```
 
 -   **`GET /profile/`**
-    -   **Description:** Retrieves current authenticated user's profile information.
+    -   **Description:** Retrieves current authenticated user's profile information including goal data.
     -   **Headers:** `Authorization: Token <token>`
     -   **Response:** `200 OK`
     ```json
@@ -90,7 +90,25 @@ All endpoints will be versioned under `/api/`. Access to all endpoints (except a
         "first_name": "John",
         "last_name": "Doe",
         "name": "John Doe",
-        "date_joined": "2024-01-15T10:30:00Z"
+        "date_joined": "2024-01-15T10:30:00Z",
+        "goal": {
+            "is_activated": true,
+            "hours": 8,
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T10:30:00Z"
+        }
+    }
+    ```
+    -   **Response (no goal):** `200 OK`
+    ```json
+    {
+        "id": 1,
+        "email": "user@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
+        "name": "John Doe",
+        "date_joined": "2024-01-15T10:30:00Z",
+        "goal": null
     }
     ```
 
@@ -451,6 +469,69 @@ Allow users to delete multiple focus entries in a single atomic request, by spec
     }
     ```
 
+### Goals (`/api/goals/`)
+
+-   **`GET /`**
+    -   **Description:** Retrieves current user's goal status.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "is_activated": true,
+        "hours": 8,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+    }
+    ```
+    -   **Response (no goal):** `200 OK`
+    ```json
+    {
+        "is_activated": false,
+        "hours": 2,
+        "created_at": null,
+        "updated_at": null
+    }
+    ```
+
+-   **`POST /activate/`**
+    -   **Description:** Activates user's goal. Creates goal if it doesn't exist.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** (optional)
+    ```json
+    {
+        "hours": 8
+    }
+    ```
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "is_activated": true,
+        "hours": 8,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+    }
+    ```
+    -   **Error Response:** `400 Bad Request`
+    ```json
+    {
+        "hours": ["Hours must be a positive integer."]
+    }
+    ```
+
+-   **`POST /deactivate/`**
+    -   **Description:** Deactivates user's goal (preserves hours setting).
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** None required
+    -   **Response:** `200 OK`
+    ```json
+    {
+        "is_activated": false,
+        "hours": 8,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+    }
+    ```
+
 ### Common HTTP Status Codes
 
 - **200**: Success
@@ -787,6 +868,38 @@ POST /api/entries/bulk-update/
 - [ ] **DOCUMENT**: Feedback system requirements and constraints
 - [ ] **REFACTOR**: Consistent with existing API patterns
 - [ ] **COMMIT**: `feat(feedback): implement feedback system with star rating`
+
+### 4.8 Goal System
+- [ ] Create `Goal` model with fields:
+  - `user`: ForeignKey to User (OneToOne relationship)
+  - `is_activated`: BooleanField (default=False)
+  - `hours`: IntegerField (default=2)
+  - `created_at`: DateTimeField (auto_now_add=True)
+  - `updated_at`: DateTimeField (auto_now=True)
+- [ ] Create and run migration for Goal model
+- [ ] Add `__str__` method to Goal model for admin interface
+- [ ] Create `GoalSerializer` with validation for hours (positive integers)
+- [ ] Update `UserProfileSerializer` to include goal data
+- [ ] Create goal URLs in `core/urls.py`:
+  - `GET /goals/` - get current user's goal status
+  - `POST /goals/activate/` - activate goal (optional hours parameter)
+  - `POST /goals/deactivate/` - deactivate goal
+- [ ] Create goal views:
+  - `get_goal_status()` - returns current goal state
+  - `activate_goal()` - activates goal with hours (auto-create if doesn't exist)
+  - `deactivate_goal()` - deactivates goal (preserves hours)
+- [ ] Add proper authentication and permissions
+- [ ] Update profile view to include goal data with `select_related('goal')`
+- [ ] Add Swagger documentation with request/response examples
+- [ ] **TEST**: Goal model creation and relationships
+- [ ] **TEST**: Goal activation/deactivation via Swagger UI
+- [ ] **TEST**: Profile endpoint includes goal data
+- [ ] **TEST**: Authentication required (401 without token)
+- [ ] **TEST**: Edge cases (no goal, invalid hours, multiple activations)
+- [ ] **AI REVIEW**: Goal system design and OneToOne relationship
+- [ ] **DOCUMENT**: Goal system requirements and API structure
+- [ ] **REFACTOR**: Consistent with existing API patterns
+- [ ] **COMMIT**: `feat(goals): implement goal system with activation/deactivation`
 
 ---
 
