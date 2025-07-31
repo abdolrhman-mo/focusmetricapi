@@ -870,36 +870,36 @@ POST /api/entries/bulk-update/
 - [X] **COMMIT**: `feat(feedback): implement feedback system with star rating`
 
 ### 4.8 Goal System
-- [ ] Create `Goal` model with fields:
+- [X] Create `Goal` model with fields:
   - `user`: ForeignKey to User (OneToOne relationship)
   - `is_activated`: BooleanField (default=False)
   - `hours`: IntegerField (default=2)
   - `created_at`: DateTimeField (auto_now_add=True)
   - `updated_at`: DateTimeField (auto_now=True)
-- [ ] Create and run migration for Goal model
-- [ ] Add `__str__` method to Goal model for admin interface
-- [ ] Create `GoalSerializer` with validation for hours (positive integers)
-- [ ] Update `UserProfileSerializer` to include goal data
-- [ ] Create goal URLs in `core/urls.py`:
+- [X] Create and run migration for Goal model
+- [X] Add `__str__` method to Goal model for admin interface
+- [X] Create `GoalSerializer` with validation for hours (positive integers)
+- [X] Update `UserProfileSerializer` to include goal data
+- [X] Create goal URLs in `core/urls.py`:
   - `GET /goals/` - get current user's goal status
   - `POST /goals/activate/` - activate goal (optional hours parameter)
   - `POST /goals/deactivate/` - deactivate goal
-- [ ] Create goal views:
+- [X] Create goal views:
   - `get_goal_status()` - returns current goal state
   - `activate_goal()` - activates goal with hours (auto-create if doesn't exist)
   - `deactivate_goal()` - deactivates goal (preserves hours)
-- [ ] Add proper authentication and permissions
-- [ ] Update profile view to include goal data with `select_related('goal')`
-- [ ] Add Swagger documentation with request/response examples
-- [ ] **TEST**: Goal model creation and relationships
-- [ ] **TEST**: Goal activation/deactivation via Swagger UI
-- [ ] **TEST**: Profile endpoint includes goal data
-- [ ] **TEST**: Authentication required (401 without token)
-- [ ] **TEST**: Edge cases (no goal, invalid hours, multiple activations)
-- [ ] **AI REVIEW**: Goal system design and OneToOne relationship
-- [ ] **DOCUMENT**: Goal system requirements and API structure
-- [ ] **REFACTOR**: Consistent with existing API patterns
-- [ ] **COMMIT**: `feat(goals): implement goal system with activation/deactivation`
+- [X] Add proper authentication and permissions
+- [X] Update profile view to include goal data with `select_related('goal')`
+- [X] Add Swagger documentation with request/response examples
+- [X] **TEST**: Goal model creation and relationships
+- [X] **TEST**: Goal activation/deactivation via Swagger UI
+- [X] **TEST**: Profile endpoint includes goal data
+- [X] **TEST**: Authentication required (401 without token)
+- [X] **TEST**: Edge cases (no goal, invalid hours, multiple activations)
+- [X] **AI REVIEW**: Goal system design and OneToOne relationship
+- [X] **DOCUMENT**: Goal system requirements and API structure
+- [X] **REFACTOR**: Consistent with existing API patterns
+- [X] **COMMIT**: `feat(goals): implement goal system with activation/deactivation`
 
 ---
 

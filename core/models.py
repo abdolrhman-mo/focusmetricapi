@@ -34,4 +34,16 @@ class Feedback(models.Model):
     def __str__(self):
         rating_text = f"Rating: {self.rating}" if self.rating else "No rating"
         text_preview = f" - {self.text[:50]}..." if self.text else ""
-        return f"{self.user.username} - {rating_text}{text_preview}" 
+        return f"{self.user.username} - {rating_text}{text_preview}"
+
+class Goal(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='goal')
+    is_activated = models.BooleanField(default=False, help_text="Whether the goal is currently active")
+    hours = models.IntegerField(default=2, help_text="Target hours per day")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        status = "Active" if self.is_activated else "Inactive"
+        return f"{self.user.username} - {self.hours}h/day ({status})" 

@@ -2,20 +2,39 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from core.models import Goal
+
+
+class GoalSerializer(serializers.ModelSerializer):
+    """Serializer for goal data in user profile."""
+    
+    class Meta:
+        model = Goal
+        fields = ['is_activated', 'hours', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user profile responses."""
     name = serializers.SerializerMethodField()
+    goal = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'name', 'date_joined']
+        fields = ['id', 'email', 'first_name', 'last_name', 'name', 'date_joined', 'goal']
         read_only_fields = ['id', 'date_joined']
     
     def get_name(self, obj):
         """Return the full name of the user."""
         return f"{obj.first_name} {obj.last_name}".strip()
+    
+    def get_goal(self, obj):
+        """Return goal data if it exists, otherwise return None."""
+        try:
+            goal = obj.goal
+            return GoalSerializer(goal).data
+        except Goal.DoesNotExist:
+            return None
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

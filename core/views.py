@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import date, timedelta
 
-from .models import Reason, FocusEntry, Feedback
+from .models import Reason, FocusEntry, Feedback, Goal
 from .serializers import (
     ReasonSerializer, 
     ReasonListSerializer, 
@@ -19,6 +19,7 @@ from .serializers import (
     BulkUpdateSerializer,
     BulkDeleteSerializer,
     FeedbackSerializer,
+    GoalSerializer,
 )
 
 
@@ -777,3 +778,159 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         Create a new feedback entry for the authenticated user.
         """
         return super().create(request, *args, **kwargs)
+
+
+class GoalViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user goals.
+    
+    Provides goal status retrieval and activation/deactivation.
+    Users can only access their own goals.
+    """
+    
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GoalSerializer
+    http_method_names = ['get', 'post']  # Only allow GET and POST
+    
+    def get_queryset(self):
+        """
+        Return goal for the current user only.
+        """
+        return Goal.objects.filter(user=self.request.user)
+    
+    @swagger_auto_schema(
+        operation_description="Get current user's goal status",
+        responses={
+            200: openapi.Response(
+                description="Goal status",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'is_activated': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'hours': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                        'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                    }
+                )
+            ),
+            401: openapi.Response(description="Authentication required")
+        }
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        Get current user's goal status.
+        """
+        goal, created = Goal.objects.get_or_create(
+            user=request.user,
+            defaults={'is_activated': False, 'hours': 2}
+        )
+        serializer = self.get_serializer(goal)
+        return Response(serializer.data)
+
+
+class GoalActivateView(APIView):
+    """
+    View for activating user goals.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Activate user's goal. Creates goal if it doesn't exist.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'hours': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description="Target hours per day (optional, uses existing if not provided)"
+                ),
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Goal activated successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'is_activated': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'hours': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                        'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                    }
+                )
+            ),
+            400: openapi.Response(description="Invalid request data"),
+            401: openapi.Response(description="Authentication required")
+        }
+    )
+    def post(self, request):
+        """
+        Activate user's goal with optional hours parameter.
+        """
+        hours = request.data.get('hours')
+        
+        # Get or create goal
+        goal, created = Goal.objects.get_or_create(
+            user=request.user,
+            defaults={'is_activated': False, 'hours': 2}
+        )
+        
+        # Update hours if provided
+        if hours is not None:
+            if hours < 1:
+                return Response(
+                    {'hours': ['Hours must be at least 1.']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if hours > 24:
+                return Response(
+                    {'hours': ['Hours cannot exceed 24 hours per day.']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            goal.hours = hours
+        
+        # Activate goal
+        goal.is_activated = True
+        goal.save()
+        
+        serializer = GoalSerializer(goal)
+        return Response(serializer.data)
+
+
+class GoalDeactivateView(APIView):
+    """
+    View for deactivating user goals.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Deactivate user's goal (preserves hours setting)",
+        responses={
+            200: openapi.Response(
+                description="Goal deactivated successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'is_activated': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'hours': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                        'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                    }
+                )
+            ),
+            401: openapi.Response(description="Authentication required")
+        }
+    )
+    def post(self, request):
+        """
+        Deactivate user's goal (preserves hours setting).
+        """
+        goal, created = Goal.objects.get_or_create(
+            user=request.user,
+            defaults={'is_activated': False, 'hours': 2}
+        )
+        
+        goal.is_activated = False
+        goal.save()
+        
+        serializer = GoalSerializer(goal)
+        return Response(serializer.data)

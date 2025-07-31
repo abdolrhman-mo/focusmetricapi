@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from datetime import date, timedelta
-from .models import Reason, FocusEntry, Feedback
+from .models import Reason, FocusEntry, Feedback, Goal
 
 
 class FocusEntryForm(ModelForm):
@@ -634,5 +634,91 @@ class FeedbackAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """
         Allow deleting feedback.
+        """
+        return True
+
+
+@admin.register(Goal)
+class GoalAdmin(admin.ModelAdmin):
+    """
+    Admin interface for Goal model.
+    """
+    list_display = ('user', 'status_display', 'hours_display', 'created_at', 'updated_at')
+    list_filter = ('is_activated', 'hours', 'created_at', 'user')
+    search_fields = ('user__username', 'user__email')
+    readonly_fields = ('created_at', 'updated_at')
+    ordering = ('-updated_at',)
+    
+    # Fieldsets for better organization
+    fieldsets = (
+        ('User Information', {
+            'fields': ('user',)
+        }),
+        ('Goal Settings', {
+            'fields': ('is_activated', 'hours'),
+            'description': 'Configure goal activation and target hours'
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_display(self, obj):
+        """
+        Display activation status with color coding.
+        """
+        if obj.is_activated:
+            return format_html(
+                '<span style="color: #28a745; font-weight: bold;">✓ Active</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: #6c757d;">○ Inactive</span>'
+            )
+    status_display.short_description = 'Status'
+    status_display.admin_order_field = 'is_activated'
+    
+    def hours_display(self, obj):
+        """
+        Display hours with color coding based on target.
+        """
+        if obj.hours >= 8:
+            color = '#28a745'  # Green for high targets
+        elif obj.hours >= 6:
+            color = '#17a2b8'  # Blue for moderate targets
+        elif obj.hours >= 4:
+            color = '#ffc107'  # Yellow for low targets
+        else:
+            color = '#dc3545'  # Red for very low targets
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}h/day</span>',
+            color, obj.hours
+        )
+    hours_display.short_description = 'Target Hours'
+    hours_display.admin_order_field = 'hours'
+    
+    def get_queryset(self, request):
+        """
+        Optimize queries with select_related.
+        """
+        return super().get_queryset(request).select_related('user')
+    
+    def has_add_permission(self, request):
+        """
+        Allow adding goals through admin.
+        """
+        return True
+    
+    def has_change_permission(self, request, obj=None):
+        """
+        Allow editing goals.
+        """
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        """
+        Allow deleting goals.
         """
         return True 

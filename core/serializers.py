@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Reason, FocusEntry, Feedback
+from .models import Reason, FocusEntry, Feedback, Goal
 from datetime import date, timedelta
 from uuid import UUID
 
@@ -408,4 +408,35 @@ class FeedbackSerializer(serializers.ModelSerializer):
         Create a new feedback entry associated with the current user.
         """
         user = self.context['request'].user
-        return Feedback.objects.create(user=user, **validated_data) 
+        return Feedback.objects.create(user=user, **validated_data)
+
+
+class GoalSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Goal model.
+    Handles CRUD operations for user goals.
+    """
+    
+    class Meta:
+        model = Goal
+        fields = ['id', 'is_activated', 'hours', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def validate_hours(self, value):
+        """
+        Validate that hours is a positive integer within reasonable limits.
+        """
+        if value < 1:
+            raise serializers.ValidationError("Hours must be at least 1.")
+        
+        if value > 24:
+            raise serializers.ValidationError("Hours cannot exceed 24 hours per day.")
+        
+        return value
+    
+    def create(self, validated_data):
+        """
+        Create a new goal associated with the current user.
+        """
+        user = self.context['request'].user
+        return Goal.objects.create(user=user, **validated_data) 
