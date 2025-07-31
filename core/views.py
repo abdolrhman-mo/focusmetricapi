@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import date, timedelta
 
-from .models import Reason, FocusEntry
+from .models import Reason, FocusEntry, Feedback
 from .serializers import (
     ReasonSerializer, 
     ReasonListSerializer, 
@@ -17,7 +17,8 @@ from .serializers import (
     FocusEntrySerializer,
     FocusEntryListSerializer,
     BulkUpdateSerializer,
-    BulkDeleteSerializer,  # <-- add import
+    BulkDeleteSerializer,
+    FeedbackSerializer,
 )
 
 
@@ -709,3 +710,70 @@ class ReasonViewSet(viewsets.ModelViewSet):
             )
         
         return super().destroy(request, *args, **kwargs)
+
+
+class FeedbackViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user feedback.
+    
+    Provides creation of feedback with star rating and/or text.
+    Users can only create feedback for themselves.
+    """
+    
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = FeedbackSerializer
+    http_method_names = ['post']  # Only allow POST for creating feedback
+    
+    def get_queryset(self):
+        """
+        Return feedback for the current user only.
+        """
+        return Feedback.objects.filter(user=self.request.user).order_by('-created_at')
+    
+    @swagger_auto_schema(
+        operation_description="Create a new feedback entry with star rating and/or text. At least one field (rating or text) is required.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'rating': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description="Star rating from 1 to 5 (optional)"
+                ),
+                'text': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Feedback text content (optional, minimum 3 characters)"
+                ),
+            }
+        ),
+        responses={
+            201: openapi.Response(
+                description="Feedback created successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'id': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID),
+                        'rating': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True),
+                        'text': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Invalid request data",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING),
+                        'rating': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                        'text': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                    }
+                )
+            ),
+            401: openapi.Response(description="Authentication required")
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new feedback entry for the authenticated user.
+        """
+        return super().create(request, *args, **kwargs)

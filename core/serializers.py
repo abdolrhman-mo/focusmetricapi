@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Reason, FocusEntry
+from .models import Reason, FocusEntry, Feedback
 from datetime import date, timedelta
 from uuid import UUID
 
@@ -354,4 +354,58 @@ class BulkDeleteSerializer(serializers.Serializer):
             raise serializers.ValidationError("Maximum 50 IDs allowed per request.")
         if len(dates) > 31:
             raise serializers.ValidationError("Maximum 31 dates allowed per request.")
-        return data 
+        return data
+
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Feedback model.
+    Handles creation of feedback with star rating and/or text.
+    At least one field (rating or text) is required.
+    """
+    
+    class Meta:
+        model = Feedback
+        fields = ['id', 'rating', 'text', 'created_at']
+        read_only_fields = ['id', 'created_at']
+    
+    def validate_rating(self, value):
+        """
+        Validate that rating is between 1 and 5 if provided.
+        """
+        if value is not None:
+            if value < 1 or value > 5:
+                raise serializers.ValidationError("Rating must be between 1 and 5.")
+        
+        return value
+    
+    def validate_text(self, value):
+        """
+        Validate text field if provided.
+        """
+        if value is not None and value.strip():
+            if len(value.strip()) < 3:
+                raise serializers.ValidationError("Text must be at least 3 characters long.")
+        
+        return value.strip() if value else value
+    
+    def validate(self, data):
+        """
+        Validate that at least one field (rating or text) is provided.
+        """
+        rating = data.get('rating')
+        text = data.get('text')
+        
+        if rating is None and (text is None or not text.strip()):
+            raise serializers.ValidationError(
+                "At least one of 'rating' or 'text' must be provided."
+            )
+        
+        return data
+    
+    def create(self, validated_data):
+        """
+        Create a new feedback entry associated with the current user.
+        """
+        user = self.context['request'].user
+        return Feedback.objects.create(user=user, **validated_data) 

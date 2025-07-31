@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from datetime import date, timedelta
-from .models import Reason, FocusEntry
+from .models import Reason, FocusEntry, Feedback
 
 
 class FocusEntryForm(ModelForm):
@@ -541,4 +541,98 @@ class FocusEntryAdmin(admin.ModelAdmin):
                 request, 
                 f'New focus entry for {obj.user.username} on {obj.date} created successfully.',
                 messages.SUCCESS
-            ) 
+            )
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    """
+    Admin interface for Feedback model.
+    """
+    list_display = ('user', 'rating_display', 'text_preview', 'created_at', 'has_both_fields')
+    list_filter = ('rating', 'created_at', 'user')
+    search_fields = ('user__username', 'user__email', 'text')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+    
+    # Fieldsets for better organization
+    fieldsets = (
+        ('User Information', {
+            'fields': ('user',)
+        }),
+        ('Feedback Content', {
+            'fields': ('rating', 'text'),
+            'description': 'At least one field (rating or text) is required'
+        }),
+        ('Metadata', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def rating_display(self, obj):
+        """
+        Display rating with stars.
+        """
+        if obj.rating is None:
+            return format_html('<span style="color: #999;">No rating</span>')
+        
+        stars = '★' * obj.rating + '☆' * (5 - obj.rating)
+        return format_html(
+            '<span style="color: #ffc107; font-size: 16px;">{}</span> ({})',
+            stars, obj.rating
+        )
+    rating_display.short_description = 'Rating'
+    rating_display.admin_order_field = 'rating'
+    
+    def text_preview(self, obj):
+        """
+        Display text preview with truncation.
+        """
+        if not obj.text:
+            return format_html('<span style="color: #999;">No text</span>')
+        
+        preview = obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+        return format_html('<span title="{}">{}</span>', obj.text, preview)
+    text_preview.short_description = 'Text Preview'
+    
+    def has_both_fields(self, obj):
+        """
+        Display whether feedback has both rating and text.
+        """
+        has_rating = obj.rating is not None
+        has_text = obj.text and obj.text.strip()
+        
+        if has_rating and has_text:
+            return format_html('<span style="color: #28a745;">✓ Both</span>')
+        elif has_rating:
+            return format_html('<span style="color: #17a2b8;">Rating only</span>')
+        elif has_text:
+            return format_html('<span style="color: #ffc107;">Text only</span>')
+        else:
+            return format_html('<span style="color: #dc3545;">Invalid</span>')
+    has_both_fields.short_description = 'Type'
+    
+    def get_queryset(self, request):
+        """
+        Optimize queries with select_related.
+        """
+        return super().get_queryset(request).select_related('user')
+    
+    def has_add_permission(self, request):
+        """
+        Allow adding feedback through admin.
+        """
+        return True
+    
+    def has_change_permission(self, request, obj=None):
+        """
+        Allow editing feedback.
+        """
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        """
+        Allow deleting feedback.
+        """
+        return True 

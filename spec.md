@@ -847,27 +847,27 @@ POST /api/entries/bulk-update/
 - [X] **COMMIT:** `feat(entries): add bulk delete endpoint for focus entries`
 
 ### 4.7 Feedback System
-- [ ] Create `Feedback` model with fields:
+- [X] Create `Feedback` model with fields:
   - `id`: UUID primary key
   - `user_id`: Foreign key to User
   - `rating`: Integer (1-5 stars, optional)
   - `text`: Text field for feedback content (optional)
   - `created_at`: DateTime
-- [ ] Create `FeedbackSerializer` for CRUD operations
-- [ ] Create `FeedbackViewSet` with POST endpoint for creating feedback
-- [ ] Add proper permissions (user can only create feedback for themselves)
-- [ ] Add validation for rating (1-5 range when provided)
-- [ ] Add validation that at least one field (rating or text) is required
-- [ ] Add Swagger documentation with request/response examples
-- [ ] Add endpoint to `core/urls.py` as `/feedback/`
-- [ ] **TEST**: Feedback creation via Swagger UI (rating only, text only, both)
-- [ ] **TEST**: Rating validation (invalid values, out of range)
-- [ ] **TEST**: Validation when neither rating nor text provided
-- [ ] **TEST**: Authentication required (401 without token)
-- [ ] **AI REVIEW**: Feedback system design and validation
-- [ ] **DOCUMENT**: Feedback system requirements and constraints
-- [ ] **REFACTOR**: Consistent with existing API patterns
-- [ ] **COMMIT**: `feat(feedback): implement feedback system with star rating`
+- [X] Create `FeedbackSerializer` for CRUD operations
+- [X] Create `FeedbackViewSet` with POST endpoint for creating feedback
+- [X] Add proper permissions (user can only create feedback for themselves)
+- [X] Add validation for rating (1-5 range when provided)
+- [X] Add validation that at least one field (rating or text) is required
+- [X] Add Swagger documentation with request/response examples
+- [X] Add endpoint to `core/urls.py` as `/feedback/`
+- [X] **TEST**: Feedback creation via Swagger UI (rating only, text only, both)
+- [X] **TEST**: Rating validation (invalid values, out of range)
+- [X] **TEST**: Validation when neither rating nor text provided
+- [X] **TEST**: Authentication required (401 without token)
+- [X] **AI REVIEW**: Feedback system design and validation
+- [X] **DOCUMENT**: Feedback system requirements and constraints
+- [X] **REFACTOR**: Consistent with existing API patterns
+- [X] **COMMIT**: `feat(feedback): implement feedback system with star rating`
 
 ### 4.8 Goal System
 - [ ] Create `Goal` model with fields:
