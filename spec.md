@@ -410,6 +410,47 @@ Allow users to delete multiple focus entries in a single atomic request, by spec
     }
     ```
 
+### Feedback (`/api/feedback/`)
+
+-   **`POST /`**
+    -   **Description:** Creates a new feedback entry with star rating and/or text. At least one field (rating or text) is required.
+    -   **Headers:** `Authorization: Token <token>`
+    -   **Request Body:** 
+    ```json
+    {
+        "rating": 5,
+        "text": "Great app! Really helps me stay focused."
+    }
+    ```
+    OR
+    ```json
+    {
+        "rating": 4
+    }
+    ```
+    OR
+    ```json
+    {
+        "text": "The app could use some improvements."
+    }
+    ```
+    -   **Response:** `201 Created`
+    ```json
+    {
+        "id": "uuid-string",
+        "rating": 5,
+        "text": "Great app! Really helps me stay focused.",
+        "created_at": "2024-01-15T10:30:00Z"
+    }
+    ```
+    -   **Error Response:** `400 Bad Request`
+    ```json
+    {
+        "error": "At least one of 'rating' or 'text' must be provided.",
+        "rating": ["Rating must be between 1 and 5."]
+    }
+    ```
+
 ### Common HTTP Status Codes
 
 - **200**: Success
@@ -723,6 +764,29 @@ POST /api/entries/bulk-update/
     - Permission checks
     - Edge cases (not found, empty input)
 - [X] **COMMIT:** `feat(entries): add bulk delete endpoint for focus entries`
+
+### 4.7 Feedback System
+- [ ] Create `Feedback` model with fields:
+  - `id`: UUID primary key
+  - `user_id`: Foreign key to User
+  - `rating`: Integer (1-5 stars, optional)
+  - `text`: Text field for feedback content (optional)
+  - `created_at`: DateTime
+- [ ] Create `FeedbackSerializer` for CRUD operations
+- [ ] Create `FeedbackViewSet` with POST endpoint for creating feedback
+- [ ] Add proper permissions (user can only create feedback for themselves)
+- [ ] Add validation for rating (1-5 range when provided)
+- [ ] Add validation that at least one field (rating or text) is required
+- [ ] Add Swagger documentation with request/response examples
+- [ ] Add endpoint to `core/urls.py` as `/feedback/`
+- [ ] **TEST**: Feedback creation via Swagger UI (rating only, text only, both)
+- [ ] **TEST**: Rating validation (invalid values, out of range)
+- [ ] **TEST**: Validation when neither rating nor text provided
+- [ ] **TEST**: Authentication required (401 without token)
+- [ ] **AI REVIEW**: Feedback system design and validation
+- [ ] **DOCUMENT**: Feedback system requirements and constraints
+- [ ] **REFACTOR**: Consistent with existing API patterns
+- [ ] **COMMIT**: `feat(feedback): implement feedback system with star rating`
 
 ---
 
