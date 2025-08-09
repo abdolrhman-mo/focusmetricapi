@@ -271,7 +271,7 @@ class FocusEntryViewSet(viewsets.ModelViewSet):
     filterset_class = FocusEntryFilter
     ordering_fields = ['date', 'hours', 'reason__description']
     ordering = ['-date']  # Default ordering: newest first
-    page_size = 90  # Default page size
+    # page_size = 50  # Default page size (its not working)
     
     def get_queryset(self):
         """
